@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+from lib.storage import TweetStore
+from datetime import datetime
+from datetime import timedelta
+
+with TweetStore() as ts:
+    ts.schedule_tweet(datetime.now() + timedelta(days=1), 'Test tweet, no url')
+    ts.schedule_tweet(datetime.now(), 'Test tweet, url', 'https://google.com')
+    ts.schedule_tweet(datetime.now(), 'Test tweet, naked url', 'google.com')

@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+from lib.storage import TweetStore
+from datetime import datetime
+
+with TweetStore() as ts:
+    def process_scheduled_tweets(tweet_text):
+        print("Got tweet: '{}'".format(tweet_text))
+        return True
+
+    ts.process_due_tweets(process_scheduled_tweets)
