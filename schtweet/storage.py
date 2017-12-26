@@ -1,5 +1,6 @@
-import sqlite3
 from datetime import datetime
+import sqlite3
+import pytz
 
 class TweetStore(object):
     """Interface to schedule tweet storage. General use is:
@@ -21,6 +22,10 @@ class TweetStore(object):
     ########################################################################
     # Data writing
     def schedule_tweet(self, date, text, url=None):
+        # Convert the date to UTC and remove the timezone. This
+        # allows us to use SQL functions to compare dates
+        date = date.astimezone(pytz.utc).replace(tzinfo=None)
+
         if url is not None and len(url) > 0:
             if not url.lower().startswith('http'):
                 url = "http://{}".format(url)
@@ -42,7 +47,7 @@ class TweetStore(object):
            If the tweet is successfully processed it should return the string
            ID of the posted tweet, otherwise return None."""
         self._cursor.execute('''SELECT * FROM tweets 
-                                    WHERE tweeted_date IS NULL AND date(tweet_on_date) <= date('now')
+                                    WHERE tweeted_date IS NULL AND DATETIME(tweet_on_date) <= DATETIME('now')
                                     ORDER BY tweet_on_date ASC''')
         due_rows = self._cursor.fetchall()
         for row in due_rows:
