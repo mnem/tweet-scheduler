@@ -59,6 +59,6 @@ Generally, you will want to call this script at regular intervals. The simplest
 way to do that is to add an entry in your crontab. You can generate a string
 which calls the script every 5 minutes by running:
 
-    pipenv run python post-scheduled-tweets.py --showcron scheduled-tweets.db
+    pipenv run python post-scheduled-tweets.py --showcron --credentials my_creds_file scheduled-tweets.db
 
 Copy the output string and add it to your crontab (e.g. `crontab -e` and paste).

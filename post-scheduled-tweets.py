@@ -10,6 +10,8 @@ from collections import namedtuple
 import io
 import argparse
 import twitter
+import shutil
+import os
 
 AccessInformation = namedtuple('AccessInformation', 'consumer_key, consumer_secret, access_token_key, access_token_secret')
 
@@ -71,6 +73,7 @@ def post_tweets_from_file(storage_file, access):
 cli_main_parser = argparse.ArgumentParser()
 cli_main_parser.add_argument('-v', '--verbose', help='Say all the things', action='store_true')
 cli_main_parser.add_argument('-n', '--nopost', help='Do everything except send tweets', action='store_true')
+cli_main_parser.add_argument('-s', '--showcron', help='Show an entry suitable for calling this script every 5 minutes via crontab. After showing the crontab entry, exit without posting tweets.', action='store_true')
 cli_main_parser.add_argument('-c', '--credentials', help='File containing the credentials to tweet with. Should be a single line of the format (values are just space separated): consumer_key consumer_secret access_token_key access_token_secret', default='access')
 cli_main_parser.add_argument('storage_file', help='The name of the file to read the scheduled tweets from. Will be updated after the tweet is sent.')
 
@@ -78,14 +81,29 @@ cli_main_parser.add_argument('storage_file', help='The name of the file to read 
 # Parse the command line and perform
 # the user's bidding
 args = cli_main_parser.parse_args()
+
 if args.verbose:
     VERBOSE = True
 if args.nopost:
     NO_POST = True
 
-verbose_log('Reading access information from "{}"'.format(args.credentials))
-access = fetch_access_information(args.credentials)
+if args.showcron:
+    pipenv_location = shutil.which('pipenv')
+    script_location = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
+    script_name = os.path.basename(__file__)
+    storage_location = os.path.abspath(os.path.realpath(args.storage_file))
+    credentials_location = os.path.abspath(os.path.realpath(args.credentials))
 
-print('Started processing scheduled tweets from "{}"'.format(args.storage_file))
-post_tweets_from_file(args.storage_file, access)
-print('Finished processing scheduled tweets from "{}"'.format(args.storage_file))
+    command = "cd '{}' && '{}' run python post-scheduled-tweets.py --credentials '{}' '{}'".format(
+        script_location, pipenv_location, credentials_location, storage_location)
+
+    cron = "*/5 * * * * {}".format(command)
+
+    print(cron)
+else:
+    verbose_log('Reading access information from "{}"'.format(args.credentials))
+    access = fetch_access_information(args.credentials)
+
+    print('Started processing scheduled tweets from "{}"'.format(args.storage_file))
+    post_tweets_from_file(args.storage_file, access)
+    print('Finished processing scheduled tweets from "{}"'.format(args.storage_file))
