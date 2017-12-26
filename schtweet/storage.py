@@ -1,16 +1,14 @@
 import sqlite3
 from datetime import datetime
 
-"""
-    Interface to schedule tweet storage. General use is:
-
-        with TweetStore() as ts:
-            # use ts object
-
-    Using it this way ensure data is saved to the underlying storage.
-"""
 class TweetStore(object):
-    """Wrapper around the underlying storage for the scheduled tweets"""
+    """Interface to schedule tweet storage. General use is:
+
+            with TweetStore() as ts:
+                # use ts object
+
+        Using it this way ensure data is saved to the underlying storage."""
+
     def __init__(self, storage_name="scheduled-tweets.db"):
         self._storage_name = storage_name
 
@@ -33,6 +31,16 @@ class TweetStore(object):
     ########################################################################
     # Data reading
     def process_due_tweets(self, processor):
+        """Allows the processing of all scheduled tweets which have not already
+           been successfully processed. They are processed by the supplied
+           processing function.
+
+           The processing function should have the signature:
+
+                processor(tweet, scheduled_date)
+
+           If the tweet is successfully processed it should return the string
+           ID of the posted tweet, otherwise return None."""
         self._cursor.execute('''SELECT * FROM tweets 
                                     WHERE tweeted_date IS NULL AND date(tweet_on_date) <= date('now')
                                     ORDER BY tweet_on_date ASC''')
@@ -40,14 +48,16 @@ class TweetStore(object):
         for row in due_rows:
             row_id = row['schedule_id']
             row_tweet = row['tweet_text']
+            row_scheduled_date = row['tweet_on_date']
             row_url = row['tweet_url']
 
             full_tweet = row_tweet
             if row_url is not None:
                 full_tweet = "{} {}".format(row_tweet, row_url)
 
-            if processor(full_tweet):
-                self._cursor.execute('''UPDATE tweets SET tweeted_date=? WHERE schedule_id=?''', (datetime.now(), row_id))
+            tweet_id = processor(full_tweet, row_scheduled_date)
+            if tweet_id is not None and len(tweet_id) > 0:
+                self._cursor.execute('''UPDATE tweets SET tweeted_date=?, tweet_id=? WHERE schedule_id=?''', (datetime.now(), tweet_id, row_id))
 
     ########################################################################
     # General usage
@@ -82,6 +92,7 @@ class TweetStore(object):
         self._cursor.execute('''CREATE TABLE IF NOT EXISTS tweets (
                                     schedule_id INTEGER PRIMARY KEY,
                                     tweet_on_date TIMESTAMP NOT NULL,
+                                    tweet_id TEXT default NULL, 
                                     tweeted_date TIMESTAMP default NULL,
                                     tweet_text TEXT NOT NULL, 
                                     tweet_url TEXT default NULL)''')
