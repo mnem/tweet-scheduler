@@ -94,8 +94,8 @@ if args.showcron:
     storage_location = os.path.abspath(os.path.realpath(args.storage_file))
     credentials_location = os.path.abspath(os.path.realpath(args.credentials))
 
-    command = "cd '{}' && '{}' run python post-scheduled-tweets.py --credentials '{}' '{}'".format(
-        script_location, pipenv_location, credentials_location, storage_location)
+    command = "cd '{}' && PATH=/usr/bin:/bin:'{}' '{}' run python post-scheduled-tweets.py --credentials '{}' '{}'".format(
+        script_location, os.path.dirname(pipenv_location), pipenv_location, credentials_location, storage_location)
 
     cron = "*/5 * * * * {}".format(command)
 
