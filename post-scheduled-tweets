@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from lib.storage import TweetStore
+from schtweet.storage import TweetStore
 from datetime import datetime
 
 with TweetStore() as ts:

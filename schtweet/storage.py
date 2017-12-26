@@ -23,7 +23,7 @@ class TweetStore(object):
     ########################################################################
     # Data writing
     def schedule_tweet(self, date, text, url=None):
-        if url is not None:
+        if url is not None and len(url) > 0:
             if not url.lower().startswith('http'):
                 url = "http://{}".format(url)
             self._cursor.execute('''INSERT INTO tweets (tweet_on_date, tweet_text, tweet_url) VALUES (?,?,?)''', (date, text, url))
