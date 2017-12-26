@@ -38,6 +38,7 @@ def parse_row(row, default_timezone):
         verbose_log('Detected timezone info: {}'.format(row_date.tzinfo))
 
     row_tweet = row[1]
+    row_url = ''
     if len(row) > 2:
         row_url = row[2]
 
