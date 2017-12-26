@@ -1,9 +1,35 @@
 #!/usr/bin/env python3
 from lib.storage import TweetStore
+
 from datetime import datetime
 from datetime import timedelta
+import csv
+import io
 
-with TweetStore() as ts:
-    ts.schedule_tweet(datetime.now() + timedelta(days=1), 'Test tweet, no url')
-    ts.schedule_tweet(datetime.now(), 'Test tweet, url', 'https://google.com')
-    ts.schedule_tweet(datetime.now(), 'Test tweet, naked url', 'google.com')
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("csv", help="The CSV file to import tweets from. Should have the format: utc_date,tweet_text,[optional url]")
+args = parser.parse_args()
+
+with io.open(args.csv, 'r', encoding='utf8') as csvfile:
+    reader = csv.reader(csvfile)
+    row_count = 0
+    url_count = 0
+    for row in reader:
+        row_count += 1
+
+        row_date_string = row[0]
+        row_tweet = row[1]
+        row_url = row[2]
+
+        if len(row_url) > 0:
+            url_count += 1
+
+        print('Date: {}, Message: "{}", URL: {}'.format(row_date_string, row_tweet, row_url))
+    print('Rows: {}, rows with URLs: {}'.format(row_count, url_count))
+
+# with TweetStore() as ts:
+#     ts.schedule_tweet(datetime.now() + timedelta(days=1), 'Test tweet, no url')
+#     ts.schedule_tweet(datetime.now(), 'Test tweet, url', 'https://google.com')
+#     ts.schedule_tweet(datetime.now(), 'Test tweet, naked url', 'google.com')

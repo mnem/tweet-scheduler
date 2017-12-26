@@ -1,3 +1,4 @@
 23/12/2017 08:30,"A test tweet, with comma",
 23/12/2017 08:30,A test tweet without comma with a URL,https://google.com
 23/12/2017 08:30,A test tweet a naked URL,google.com
+23/12/9999 08:30,"A test tweet in the future",
