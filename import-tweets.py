@@ -37,6 +37,9 @@ def parse_row(row, default_timezone):
     else:
         verbose_log('Detected timezone info: {}'.format(row_date.tzinfo))
 
+    if len(row) == 0 or len(row) > 3:
+        raise SystemExit('Could not read row. Expected 2 or 3 columns but found {}. Ensure you are using the format: date,tweet_text,[optional url]'.format(len(row)))
+
     row_tweet = row[1]
     row_url = ''
     if len(row) > 2:
