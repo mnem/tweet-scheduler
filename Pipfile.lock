@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a6e10032f83f2b251beed0a32e14e66fd5080dd3055a83ff7ae31babfd58882b"
+            "sha256": "ef01d165185d0de759a109675e95be2dbd94ac8ac838ccde5920b0d4e8e138d9"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -70,11 +70,9 @@
             "version": "==2.6.1"
         },
         "python-twitter": {
-            "hashes": [
-                "sha256:0c7720b2fffe488326b5faf66429b15cfd0cadb38200d20d1ae539f2eae49e4a",
-                "sha256:a9f2bd038a05ba384fa03e39949d1445349771ce7897aeb3c6d8774beba08185"
-            ],
-            "version": "==3.3"
+            "editable": true,
+            "git": "https://github.com/bear/python-twitter.git",
+            "ref": "b15697e4bc869a82da9d4cfb0b085698733a91dc"
         },
         "pytz": {
             "hashes": [
