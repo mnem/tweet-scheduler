@@ -49,7 +49,7 @@ def post_tweets_from_file(storage_file, access):
         try:
             status = None
             if NO_POST:
-                print('Would have posted "{}"', tweet_text)
+                print('Would have posted "{}"'.format(tweet_text))
             else:
                 status = twitter_api.PostUpdate(tweet_text)
                 tweet_id = status.id_str
@@ -58,7 +58,7 @@ def post_tweets_from_file(storage_file, access):
                 sent_tweets += 1
                 succeeded = True
         except Exception as e:
-            print('Failed to send tweet "{}". Exception: {}', tweet_text, e)
+            print('Failed to send tweet "{}". Exception: {}'.format(tweet_text, e))
 
         return tweet_id
 
