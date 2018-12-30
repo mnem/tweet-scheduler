@@ -13,7 +13,7 @@ name = "pypi"
 
 pytz = "*"
 python-dateutil = "*"
-python-twitter = {git = "https://github.com/bear/python-twitter.git", editable = true}
+python-twitter = "~=3.5"
 
 
 [requires]
