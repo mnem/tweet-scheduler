@@ -62,3 +62,55 @@ which calls the script every 5 minutes by running:
     pipenv run python post-scheduled-tweets.py --showcron --credentials my_creds_file scheduled-tweets.db
 
 Copy the output string and add it to your crontab (e.g. `crontab -e` and paste).
+
+## Creating a tweet schedule
+
+Sometimes you have a big ol' list of tweets in a file and you want them to be
+tweeted at at regular times throughout the year. If that's the case then the
+`schedule-lines.py` script will help you.
+
+As it's input, it takes a text file which contains one tweet per line. You then
+specify the start date for the tweets, and provide a time pattern for posting
+each day. The time pattern is specified as a 24h comma separated list which
+goes down to minute granularity.
+
+Using that data, the script reads each line, generates a timestamp, and then outputs
+it to a file as a CSV line suitable for importing with the `import-tweets.py`
+script above.
+
+Comments can be added to the input file by starting a line with `//`. To skip a time
+slot simply enter an empty line for that slot.
+
+For example, assume we have the following input file:
+
+```
+Tweet 1
+Tweet 2
+// Skip the next time slot
+
+Tweet 3
+Tweet 4
+Tweet 5
+```
+
+We can schedule those tweets to go out twice a day at 9am and 9pm starting from
+the first of January 2019 with a line such as:
+
+```bash
+pipenv run python schedule-lines.py --start 01/01/2019 --times 0900,2100 --output tweets.csv tweets.txt
+```
+
+This reads from `tweets.txt` and outputs to `tweets.csv`, scheduling twice daily
+tweets and skipping the morning tweet on the second day (the blank line). It will
+output the following CSV file:
+
+```
+01/01/2019 09:00,Tweet 1
+01/01/2019 21:00,Tweet 2
+02/01/2019 21:00,Tweet 3
+03/01/2019 09:00,Tweet 4
+03/01/2019 21:00,Tweet 5
+```
+
+Note that by default data is appended to the output file. If you want to overwrite
+the existig content, add the `--overwrite` flag.
