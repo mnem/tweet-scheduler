@@ -1,3 +1,4 @@
+*.txt
 *.db
 *.csv
 access*
