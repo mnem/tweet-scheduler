@@ -13,30 +13,37 @@ import twitter
 import shutil
 import os
 
-AccessInformation = namedtuple('AccessInformation', 'consumer_key, consumer_secret, access_token_key, access_token_secret')
+AccessInformation = namedtuple('AccessInformation',
+                               'consumer_key, consumer_secret, access_token_key, access_token_secret')
 
 NO_POST = False
 VERBOSE = False
+
+
 def verbose_log(message):
     if VERBOSE:
         print(message)
 
+
 def fetch_access_information(access_file):
     """Loads access information from a file."""
-    line = ''
     with io.open(access_file, 'r', encoding='utf8') as file:
         line = file.readline()
         line = ' '.join(line.split())
     parts = line.split(' ')
 
     if not len(parts) == 4:
-        raise SystemExit('Could to read all parts from {}. Expected line with: <consumer_key> <consumer_secret> <access_token_key> <access_token_secret>'.format(access_file))
+        raise SystemExit('Could to read all parts from {}. Expected line with: '
+                         '<consumer_key> <consumer_secret> '
+                         '<access_token_key> <access_token_secret>'.format(access_file))
 
     return AccessInformation(parts[0], parts[1], parts[2], parts[3])
 
-def post_tweets_from_file(storage_file, access):
-    verbose_log('Connecting with consumer_key="{}", access_token_key="{}"'.format(access.consumer_key, access.access_token_key))
-    twitter_api = twitter.Api(**access._asdict())
+
+def post_tweets_from_file(storage_file, tokens):
+    verbose_log('Connecting with consumer_key="{}", '
+                'access_token_key="{}"'.format(tokens.consumer_key, tokens.access_token_key))
+    twitter_api = twitter.Api(**tokens._asdict())
 
     processed_tweets = 0
     sent_tweets = 0
@@ -56,7 +63,6 @@ def post_tweets_from_file(storage_file, access):
             if status is not None:
                 nonlocal sent_tweets
                 sent_tweets += 1
-                succeeded = True
         except Exception as e:
             print('Failed to send tweet "{}". Exception: {}'.format(tweet_text, e))
 
@@ -68,14 +74,26 @@ def post_tweets_from_file(storage_file, access):
     print('Number of tweets processed: {}'.format(processed_tweets))
     print('     Number of tweets sent: {}'.format(sent_tweets))
 
+
 ########################################
 # Set up the CLI parse
 cli_main_parser = argparse.ArgumentParser()
-cli_main_parser.add_argument('-v', '--verbose', help='Say all the things', action='store_true')
-cli_main_parser.add_argument('-n', '--nopost', help='Do everything except send tweets', action='store_true')
-cli_main_parser.add_argument('-s', '--showcron', help='Show an entry suitable for calling this script every 5 minutes via crontab. After showing the crontab entry, exit without posting tweets.', action='store_true')
-cli_main_parser.add_argument('-c', '--credentials', help='File containing the credentials to tweet with. Should be a single line of the format (values are just space separated): consumer_key consumer_secret access_token_key access_token_secret', default='access')
-cli_main_parser.add_argument('storage_file', help='The name of the file to read the scheduled tweets from. Will be updated after the tweet is sent.')
+cli_main_parser.add_argument('-v', '--verbose',
+                             help='Say all the things',
+                             action='store_true')
+cli_main_parser.add_argument('-n', '--nopost',
+                             help='Do everything except send tweets',
+                             action='store_true')
+cli_main_parser.add_argument('-s', '--showcron',
+                             help='Show an entry suitable for calling this script every 5 minutes via crontab. '
+                                  'After showing the crontab entry, exit without posting tweets.', action='store_true')
+cli_main_parser.add_argument('-c', '--credentials',
+                             help='File containing the credentials to tweet with. Should be a single line of the '
+                                  'format (values are just space separated): consumer_key consumer_secret access_'
+                                  'token_key access_token_secret', default='access')
+cli_main_parser.add_argument('storage_file',
+                             help='The name of the file to read the scheduled tweets from. Will be updated after '
+                                  'the tweet is sent.')
 
 ########################################
 # Parse the command line and perform
@@ -94,8 +112,10 @@ if args.showcron:
     storage_location = os.path.abspath(os.path.realpath(args.storage_file))
     credentials_location = os.path.abspath(os.path.realpath(args.credentials))
 
-    command = "cd '{}' && PATH=/usr/bin:/bin:'{}' '{}' run python post-scheduled-tweets.py --credentials '{}' '{}'".format(
-        script_location, os.path.dirname(pipenv_location), pipenv_location, credentials_location, storage_location)
+    command = "cd '{}' && PATH=/usr/bin:/bin:'{}' '{}' run " \
+              "python post-scheduled-tweets.py --credentials '{}' '{}'".format(
+                    script_location, os.path.dirname(pipenv_location), pipenv_location,
+                    credentials_location, storage_location)
 
     cron = "*/5 * * * * {}".format(command)
 
