@@ -3,6 +3,8 @@
 *.csv
 access*
 
+.idea/
+
 ### https://raw.github.com/github/gitignore/1a9f616ce525987555d43c72d59eb830d1856bd7/Python.gitignore
 
 # Byte-compiled / optimized / DLL files
