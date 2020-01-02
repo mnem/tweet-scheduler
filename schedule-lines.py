@@ -18,8 +18,6 @@ import datetime
 import os
 from typing import TextIO
 
-COMMENT_PREFIX = '//'
-
 VERBOSE = False
 
 
@@ -69,6 +67,10 @@ def escape_line_for_csv(line):
         return line
 
 
+def line_is_comment(line):
+    return line.startswith('//') or line.startswith('#')
+
+
 def process_lines(input_filename, output_filename, first_day, times, overwrite):
     verbose_log('     Input: {}'.format(input_filename))
     verbose_log('    Output: {}'.format(output_filename))
@@ -95,7 +97,7 @@ def process_lines(input_filename, output_filename, first_day, times, overwrite):
         with open(output_filename, mode) as output_file:  # type: TextIO
             for line in input_file:
                 line = line.strip()
-                if line.startswith(COMMENT_PREFIX):
+                if line_is_comment(line):
                     verbose_log('Skipping comment: {}'.format(line))
                     continue
 

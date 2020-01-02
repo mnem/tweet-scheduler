@@ -78,7 +78,7 @@ Using that data, the script reads each line, generates a timestamp, and then out
 it to a file as a CSV line suitable for importing with the `import-tweets.py`
 script above.
 
-Comments can be added to the input file by starting a line with `//`. To skip a time
+Comments can be added to the input file by starting a line with `//` or `#`. To skip a time
 slot simply enter an empty line for that slot.
 
 For example, assume we have the following input file:
