@@ -15,6 +15,7 @@
 #
 import argparse
 import datetime
+import math
 import os
 from typing import TextIO
 
@@ -27,14 +28,14 @@ def verbose_log(message):
         print(message)
 
 
-def parse_start_date(start_date_str):
+def parse_date_string(date_str):
     try:
-        components = [int(x.strip()) for x in start_date_str.split('/')]
+        components = [int(x.strip()) for x in date_str.split('/')]
         if len(components) > 3:
             raise Exception('Too many date components')
     except Exception as e:
-        raise SystemExit('{}\nUnexpected start date. '
-                         'Expected format dd/mm/yyyy, found: "{}".'.format(e, start_date_str))
+        raise SystemExit('{}\nUnexpected date format. '
+                         'Expected format dd/mm/yyyy, found: "{}".'.format(e, date_str))
 
     now = datetime.datetime.now()
     if len(components) == 0:
@@ -47,6 +48,21 @@ def parse_start_date(start_date_str):
         components.append(now.year)
 
     return datetime.datetime(components[2], components[1], components[0])
+
+
+def parse_start_date(start_date_str, end_date_str, num_days_tweeting):
+    if start_date_str is not None and end_date_str is not None:
+        raise SystemExit('Must specify only one of start date (--start) or end date (--end).')
+
+    if start_date_str is not None:
+        return parse_date_string(start_date_str)
+
+    if end_date_str is not None:
+        end_date = parse_date_string(end_date_str)
+        assert isinstance(num_days_tweeting, int)
+        return end_date - datetime.timedelta(days=num_days_tweeting - 1)
+
+    raise SystemExit('Must specify one of start date (--start) or end date (--end).')
 
 
 def parse_times(times_str):
@@ -71,10 +87,27 @@ def line_is_comment(line):
     return line.startswith('//') or line.startswith('#')
 
 
-def process_lines(input_filename, output_filename, first_day, times, overwrite):
+def tweet_reader(filename):
+    with open(filename, 'r') as input:
+        for line in input:
+            line = line.strip()
+            if line_is_comment(line):
+                verbose_log('Skipping comment: {}'.format(line))
+                continue
+            yield line
+
+
+def count_tweets(filename):
+    num_tweets = 0
+    for _ in tweet_reader(filename):
+        num_tweets += 1
+    return  num_tweets
+
+
+def process_tweets(input_filename, output_filename, first_day, times, overwrite):
     verbose_log('     Input: {}'.format(input_filename))
     verbose_log('    Output: {}'.format(output_filename))
-    verbose_log('Overwritet: {}'.format(overwrite))
+    verbose_log(' Overwrite: {}'.format(overwrite))
     verbose_log(' First day: {}'.format(first_day.isoformat()))
     verbose_log('     Times: {}'.format([x.strftime('%H%M') for x in times]))
     verbose_log('     Input: {}\n'.format(input_filename))
@@ -88,38 +121,33 @@ def process_lines(input_filename, output_filename, first_day, times, overwrite):
     current_day = first_day
     num_lines = 0
     num_scheduled = 0
-    with open(input_filename, 'r') as input_file:
-        if overwrite:
-            mode = 'w'
-        else:
-            mode = 'a'
 
-        with open(output_filename, mode) as output_file:  # type: TextIO
-            for line in input_file:
-                line = line.strip()
-                if line_is_comment(line):
-                    verbose_log('Skipping comment: {}'.format(line))
-                    continue
+    if overwrite:
+        mode = 'w'
+    else:
+        mode = 'a'
 
-                num_lines += 1
-                if len(line) > 0:
-                    schedule = datetime.datetime(current_day.year, current_day.month, current_day.day,
-                                                 hour=times[current_time_index].hour,
-                                                 minute=times[current_time_index].minute)
-                    output_line = '{},{}'.format(schedule.strftime('%d/%m/%Y %H:%M'), escape_line_for_csv(line))
-                    output_file.write('{}\n'.format(output_line))
-                    verbose_log('Entry: {}'.format(output_line))
+    with open(output_filename, mode) as output_file:  # type: TextIO
+        for line in tweet_reader(input_filename):
+            num_lines += 1
+            if len(line) > 0:
+                schedule = datetime.datetime(current_day.year, current_day.month, current_day.day,
+                                             hour=times[current_time_index].hour,
+                                             minute=times[current_time_index].minute)
+                output_line = '{},{}'.format(schedule.strftime('%d/%m/%Y %H:%M'), escape_line_for_csv(line))
+                output_file.write('{}\n'.format(output_line))
+                verbose_log('Entry: {}'.format(output_line))
 
-                    num_scheduled += 1
-                else:
-                    verbose_log('Skipping next time slot because of empty line')
+                num_scheduled += 1
+            else:
+                verbose_log('Skipping next time slot because of empty line')
 
-                current_time_index += 1
-                if current_time_index >= len(times):
-                    current_time_index = 0
-                    current_day += datetime.timedelta(days=1)
+            current_time_index += 1
+            if current_time_index >= len(times):
+                current_time_index = 0
+                current_day += datetime.timedelta(days=1)
 
-        print('Scheduled {} tweets into {} time slots.'.format(num_scheduled, num_lines))
+    print('Scheduled {} tweets into {} time slots.'.format(num_scheduled, num_lines))
 
 
 ########################################
@@ -131,8 +159,13 @@ cli_main_parser.add_argument('-v', '--verbose',
 cli_main_parser.add_argument('-s', '--start',
                              help='The initial date to schedule the lines from. Specified '
                                   'as dd/mm/yyyy. You can omit year, year and month or year, '
-                                  'month and day. Omitted fields default to the current date.',
-                             default=datetime.datetime.now().strftime('%d/%m/%Y'))
+                                  'month and day. Omitted fields default to the current date.'
+                             'This argument is incompatible with --end.')
+cli_main_parser.add_argument('-e', '--end',
+                             help='The end date to schedule the lines from. Specified '
+                                  'as dd/mm/yyyy. You can omit year, year and month or year, '
+                                  'month and day. Omitted fields default to the current date. '
+                                  'This argument is incompatible with --start.')
 cli_main_parser.add_argument('-o', '--output',
                              help='The name of the file to append the imported data to.'
                                   ' Will be created if it does not exist.',
@@ -154,13 +187,32 @@ cli_main_parser.add_argument('lines_file',
 ########################################
 # Parse the command line and perform
 # the user's bidding
-args = cli_main_parser.parse_args()
-if args.verbose:
+
+
+def main(args):
+    # Resolve the filenames
+    input_filename = os.path.abspath(args.lines_file)
+    output_filename = os.path.abspath(args.output)
+
+    # Work out the length of the tweet period
+    num_tweets = count_tweets(input_filename)
+    times = parse_times(args.times)
+    num_days_tweeting = math.ceil(num_tweets / len(times))
+
+    # Work out the start date
+    start_date = parse_start_date(args.start, args.end, num_days_tweeting)
+
+    process_tweets(
+        input_filename,
+        output_filename,
+        start_date,
+        times,
+        args.overwrite)
+
+
+parsed_args = cli_main_parser.parse_args()
+if parsed_args.verbose:
     VERBOSE = True
 
-process_lines(
-    os.path.abspath(args.lines_file),
-    os.path.abspath(args.output),
-    parse_start_date(args.start),
-    parse_times(args.times),
-    args.overwrite)
+
+main(parsed_args)
